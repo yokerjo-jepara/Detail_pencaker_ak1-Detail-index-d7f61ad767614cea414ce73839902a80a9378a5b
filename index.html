@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Pengguna - Z-TRONIK</title>
+    <title>Detail Pengguna</title>
     <!-- Pakai Tailwind CSS biar gampang bikin responsif dan stylingnya rapi -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -35,26 +35,43 @@
         }
     </style>
 </head>
-<body class="antialiased text-gray-800 min-h-screen p-4 md:p-8">
+<body class="antialiased text-gray-800 min-h-screen p-4 md:p-8 bg-gray-50">
 
-    <div class="max-w-5xl mx-auto mt-4 md:mt-8 bg-white p-4 md:p-6 rounded shadow-sm border border-gray-100">
+    <!-- Area Form Pencarian (Ditampilkan pertama kali) -->
+    <div id="search-container" class="max-w-md mx-auto mt-10 md:mt-20 bg-white p-6 md:p-8 rounded shadow-sm border border-gray-200">
+        <h2 class="text-xl md:text-2xl font-semibold text-center mb-6 text-gray-800 tracking-wide">Cek Status AK/1</h2>
+        <form id="search-form" class="space-y-4">
+            <div>
+                <label for="no_pendaftaran" class="block text-sm font-medium text-gray-700 mb-1">Masukkan No. Pendaftaran Pencari Kerja</label>
+                <input type="text" id="no_pendaftaran" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors" placeholder="Contoh: 33201234567081945">
+            </div>
+            <button type="submit" id="btn-search" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex justify-center items-center">
+                <span>Cari Data</span>
+            </button>
+        </form>
+        <div id="error-message" class="mt-4 text-center text-sm text-red-600 hidden"></div>
+    </div>
+
+    <!-- Area Detail Pengguna (Awalnya disembunyikan pakai class "hidden") -->
+    <div id="result-container" class="max-w-5xl mx-auto mt-4 md:mt-8 bg-white p-4 md:p-6 rounded shadow-sm border border-gray-100 hidden">
+        <!-- Tombol Kembali -->
+        <button onclick="kembaliKePencarian()" class="mb-4 text-sm text-blue-600 hover:text-blue-800 flex items-center transition-colors">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            Kembali Cari Baru
+        </button>
+
         <!-- Judul -->
-        <h2 class="text-2xl md:text-3xl font-semibold text-center mb-6 text-gray-800 tracking-wide">Detail Pengguna</h2>
+        <h2 class="text-2xl md:text-3xl font-semibold text-center mb-4 text-gray-800 tracking-wide">Detail Pengguna</h2>
+        
+        <div class="mb-6 text-center text-gray-600 font-medium">
+            No. Pendaftaran: <span id="label-no-pendaftaran" class="text-gray-800 font-bold">-</span>
+        </div>
 
         <!-- Area Tabel -->
         <div class="overflow-hidden">
             <table class="custom-table text-sm md:text-base">
                 <tbody id="table-body">
                     <!-- Data bakal dimuat ke sini pake JavaScript -->
-                    <tr>
-                        <td colspan="2" class="text-center text-gray-500 py-8">
-                            <svg class="animate-spin h-8 w-8 mx-auto text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Sedang mengambil data dari server...
-                        </td>
-                    </tr>
                 </tbody>
             </table>
         </div>
@@ -62,15 +79,36 @@
 
     <script>
         // ====================================================================
-        // BRO JOE, GANTI LINK INI SAMA LINK WEB APP GOOGLE APPS SCRIPT LO YAA!
+        // BRO JOE, JANGAN LUPA UPDATE LAGI LINK GAS YANG BARU DI SINI YAA!
         // ====================================================================
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxvFYeQTj2LxSVvDKHdASsRL-PRL4XPGA6OCDamXrxgxbZ6vIjjrAiwG3FlWMtTqs6i/exec'; 
 
-        // Fungsi buat ngerender tabel
+        // Fungsi buat kembali ke form awal
+        function kembaliKePencarian() {
+            document.getElementById('result-container').classList.add('hidden');
+            document.getElementById('search-container').classList.remove('hidden');
+            document.getElementById('no_pendaftaran').value = ''; // Kosongin input
+            document.getElementById('error-message').classList.add('hidden');
+        }
+
+        // Fungsi buat ngerender tabel dengan data yang didapat
         function renderTable(data) {
             const tbody = document.getElementById('table-body');
+            document.getElementById('label-no-pendaftaran').innerText = data.no_pendaftaran || '-';
             
-            // Ngebuat baris tabel sesuai gambar
+            // Format fallback di frontend (Berjaga-jaga kalau data dari GAS masih format ISO time)
+            let tanggalTampil = data.tanggal_pengajuan;
+            if (typeof tanggalTampil === 'string' && tanggalTampil.includes('T') && tanggalTampil.includes('Z')) {
+                const d = new Date(tanggalTampil);
+                if (!isNaN(d)) {
+                    const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                    const tgl = String(d.getDate()).padStart(2, '0');
+                    const bln = namaBulan[d.getMonth()];
+                    const thn = d.getFullYear();
+                    tanggalTampil = `${tgl} ${bln} ${thn}`;
+                }
+            }
+            
             tbody.innerHTML = `
                 <tr>
                     <td class="col-label text-gray-600">Foto</td>
@@ -88,7 +126,7 @@
                 </tr>
                 <tr>
                     <td colspan="2" class="text-gray-700">
-                        Pencaker telah mengajukan permohonan AK/1 pada tanggal ${data.tanggal_pengajuan}
+                        Pencaker telah mengajukan permohonan AK/1 pada tanggal ${tanggalTampil}
                     </td>
                 </tr>
                 <tr>
@@ -99,48 +137,79 @@
             `;
         }
 
-        // Fungsi buat ngambil data
-        async function fetchData() {
-            try {
-                // Kalo GAS_URL belum diganti, kita tampilin data dummy dulu biar persis kayak gambar lo
-                if (GAS_URL === 'URL_GAS_LO_TARO_DISINI') {
-                    console.log("Pake data dummy karena link GAS belum dimasukin.");
-                    
-                    // Simulasi loading 1 detik
-                    await new Promise(resolve => setTimeout(resolve, 1000)); 
+        // Event saat form disubmit
+        document.getElementById('search-form').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Mencegah reload halaman
+            
+            const noPendaftaran = document.getElementById('no_pendaftaran').value.trim();
+            const btnSearch = document.getElementById('btn-search');
+            const errorMsg = document.getElementById('error-message');
+            
+            if (!noPendaftaran) return;
 
-                    const dummyData = {
-                        foto: "https://placehold.co/150x200/red/white?text=Foto", // Nanti pake link imgbb lo
-                        nama: "MUHAMMAD HENDRI FIRMANSYA PUTRA",
-                        alamat: "Batealit Setro RT 16/RW 04 Batealit Kabupaten Jepara",
-                        tanggal_pengajuan: "08 Agustus 2024",
-                        penandatangan: "PENGANTAR KERJA (AMRINA ROSYIDA, S.Psi.MH)"
-                    };
-                    renderTable(dummyData);
-                    return;
+            // Reset tampilan error & ubah tombol jadi efek loading putar-putar
+            errorMsg.classList.add('hidden');
+            const originalBtnContent = btnSearch.innerHTML;
+            btnSearch.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Sedang Mencari...
+            `;
+            btnSearch.disabled = true;
+
+            try {
+                // Skenario Dummy untuk testing (kalo lo belum masukin link GAS lo)
+                if (GAS_URL === 'URL_GAS_LO_TARO_DISINI') {
+                    await new Promise(resolve => setTimeout(resolve, 1500)); // Pura-pura nunggu server
+                    
+                    // Kalau buat testing, coba masukin angka "123" biar datanya muncul
+                    if (noPendaftaran === "123") {
+                        const dummyData = {
+                            no_pendaftaran: "123",
+                            foto: "https://placehold.co/150x200/red/white?text=Foto", 
+                            nama: "MUHAMMAD HENDRI FIRMANSYA PUTRA",
+                            alamat: "Batealit Setro RT 16/RW 04 Batealit Kabupaten Jepara",
+                            tanggal_pengajuan: "08 Agustus 2024",
+                            penandatangan: "PENGANTAR KERJA (AMRINA ROSYIDA, S.Psi.MH)"
+                        };
+                        renderTable(dummyData);
+                        document.getElementById('search-container').classList.add('hidden');
+                        document.getElementById('result-container').classList.remove('hidden');
+                    } else {
+                        // Kalau salah masukin, error
+                        throw new Error("Data tidak ditemukan! Coba masukkan angka '123' untuk test (Karena link GAS belum di-setting).");
+                    }
+                } else {
+                    // Ini kode asli yang bakal jalan kalau URL GAS udah dimasukin
+                    const targetUrl = GAS_URL + '?id=' + encodeURIComponent(noPendaftaran);
+                    const response = await fetch(targetUrl);
+                    
+                    if (!response.ok) throw new Error('Gagal terhubung ke server');
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.message); // Menampilkan pesan error khusus dari GAS
+                    }
+
+                    // Kalau sukses nemu data di sheet
+                    renderTable(data);
+                    document.getElementById('search-container').classList.add('hidden');
+                    document.getElementById('result-container').classList.remove('hidden');
                 }
 
-                // Ini yang jalan kalo link GAS udah lo masukin
-                const response = await fetch(GAS_URL);
-                if (!response.ok) throw new Error('Gagal ngambil data');
-                
-                const data = await response.json();
-                renderTable(data);
-
             } catch (error) {
-                console.error("Waduh, ada error Bro:", error);
-                document.getElementById('table-body').innerHTML = `
-                    <tr>
-                        <td colspan="2" class="text-center text-red-500 py-8">
-                            Gagal memuat data. Cek koneksi atau URL GAS-nya Bro!
-                        </td>
-                    </tr>
-                `;
+                console.error("Error:", error);
+                errorMsg.innerText = error.message || "Terjadi kesalahan saat mengambil data.";
+                errorMsg.classList.remove('hidden');
+            } finally {
+                // Kembalikan tombol jadi normal lagi
+                btnSearch.innerHTML = originalBtnContent;
+                btnSearch.disabled = false;
             }
-        }
-
-        // Jalanin fungsi pas halaman dibuka
-        window.onload = fetchData;
+        });
     </script>
 </body>
 </html>

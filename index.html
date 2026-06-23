@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Pengguna - Z-TRONIK</title>
+    <!-- Pakai Tailwind CSS biar gampang bikin responsif dan stylingnya rapi -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styling buat ngepasin border tabel persis kayak di gambar */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #fcfcfc;
+        }
+        .custom-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .custom-table th, .custom-table td {
+            border: 1px solid #dee2e6; /* Warna border abu-abu khas tabel rapi */
+            padding: 12px 15px;
+            vertical-align: top;
+            color: #333;
+        }
+        /* Biar kolom kiri (label) gak terlalu lebar di layar gede */
+        @media (min-width: 640px) {
+            .col-label {
+                width: 25%;
+            }
+        }
+        @media (max-width: 639px) {
+            .col-label {
+                width: 35%;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto mt-4 md:mt-8 bg-white p-4 md:p-6 rounded shadow-sm border border-gray-100">
+        <!-- Judul -->
+        <h2 class="text-2xl md:text-3xl font-semibold text-center mb-6 text-gray-800 tracking-wide">Detail Pengguna</h2>
+
+        <!-- Area Tabel -->
+        <div class="overflow-hidden">
+            <table class="custom-table text-sm md:text-base">
+                <tbody id="table-body">
+                    <!-- Data bakal dimuat ke sini pake JavaScript -->
+                    <tr>
+                        <td colspan="2" class="text-center text-gray-500 py-8">
+                            <svg class="animate-spin h-8 w-8 mx-auto text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Sedang mengambil data dari server...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ====================================================================
+        // BRO JOE, GANTI LINK INI SAMA LINK WEB APP GOOGLE APPS SCRIPT LO YAA!
+        // ====================================================================
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxvFYeQTj2LxSVvDKHdASsRL-PRL4XPGA6OCDamXrxgxbZ6vIjjrAiwG3FlWMtTqs6i/exec'; 
+
+        // Fungsi buat ngerender tabel
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            
+            // Ngebuat baris tabel sesuai gambar
+            tbody.innerHTML = `
+                <tr>
+                    <td class="col-label text-gray-600">Foto</td>
+                    <td>
+                        <img src="${data.foto}" alt="Foto Pengguna" class="w-24 md:w-32 h-auto object-cover border border-gray-300 shadow-sm" onerror="this.src='https://placehold.co/150x200/red/white?text=Foto+Error'">
+                    </td>
+                </tr>
+                <tr>
+                    <td class="col-label text-gray-600">Nama</td>
+                    <td class="font-medium">${data.nama}</td>
+                </tr>
+                <tr>
+                    <td class="col-label text-gray-600">Alamat</td>
+                    <td>${data.alamat}</td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="text-gray-700">
+                        Pencaker telah mengajukan permohonan AK/1 pada tanggal ${data.tanggal_pengajuan}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="text-gray-700">
+                        Ak 1 Pencaker telah ditandatangani resmi oleh ${data.penandatangan}
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Fungsi buat ngambil data
+        async function fetchData() {
+            try {
+                // Kalo GAS_URL belum diganti, kita tampilin data dummy dulu biar persis kayak gambar lo
+                if (GAS_URL === 'URL_GAS_LO_TARO_DISINI') {
+                    console.log("Pake data dummy karena link GAS belum dimasukin.");
+                    
+                    // Simulasi loading 1 detik
+                    await new Promise(resolve => setTimeout(resolve, 1000)); 
+
+                    const dummyData = {
+                        foto: "https://placehold.co/150x200/red/white?text=Foto", // Nanti pake link imgbb lo
+                        nama: "MUHAMMAD HENDRI FIRMANSYA PUTRA",
+                        alamat: "Batealit Setro RT 16/RW 04 Batealit Kabupaten Jepara",
+                        tanggal_pengajuan: "08 Agustus 2024",
+                        penandatangan: "PENGANTAR KERJA (AMRINA ROSYIDA, S.Psi.MH)"
+                    };
+                    renderTable(dummyData);
+                    return;
+                }
+
+                // Ini yang jalan kalo link GAS udah lo masukin
+                const response = await fetch(GAS_URL);
+                if (!response.ok) throw new Error('Gagal ngambil data');
+                
+                const data = await response.json();
+                renderTable(data);
+
+            } catch (error) {
+                console.error("Waduh, ada error Bro:", error);
+                document.getElementById('table-body').innerHTML = `
+                    <tr>
+                        <td colspan="2" class="text-center text-red-500 py-8">
+                            Gagal memuat data. Cek koneksi atau URL GAS-nya Bro!
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Jalanin fungsi pas halaman dibuka
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
